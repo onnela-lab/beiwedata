@@ -4,6 +4,7 @@
 # Table of Contents
 - [Usage](#usage)
 - [Data overview](#data-overview)
+    - [Timestamps](#timestamps)
 
 # Usage
 `from beiwe-desktop import *` is the standard way to import and this document will assume `beiwe-desktop` has been imported to the top level. If you `import as`, please adjust the usage examples accordingly.

@@ -20,15 +20,11 @@ import matplotlib.pyplot as plt
 import calendar
 import datetime
 import csv
-# import pytz
-# import shapefile
-# import fiona
-# from pytz import timezone
 from matplotlib.dates import HourLocator
 from scipy.io import wavfile
 from mpl_toolkits.basemap import Basemap
 
-# # Plot settings
+## Plot settings
 pd.set_option('display.mpl_style', 'default')
 
 
@@ -72,34 +68,40 @@ def list_data_files(stream, fpath='./', nonempty=True,
                 - 'wifi' for wifi logs
     fpath : directory to be searched (default is current directory)
     nonempty : If True, will remove empty files from the list
-    start_t : timestamp of starting time of file creation timeframe
-    end_t : timestamp for ending time of file creation timeframe
+    start_t : timestamp of starting time of **file creation** timeframe
+    end_t : timestamp for ending time of **file creation** timeframe
+
+    Usage
+    -----
+    call_csv_files = list_data_files(stream='calls', fpath='./user_directory')
+    gps_csv_files = list_data_files(stream='gps', fpath='./user_directory')
 
     Notes
     -----
     For sanity, I check to make sure it is a .csv file, but if this hinders
     performance, it is probably not necessary. Due to this check, **voice
-    recordings will not work** and will have its own function.
+    recordings will not work** and will have its own function. Also note
+    that start and end times are for file creation -- not observation time.
 
     Also see make_timestamp().
 
     """
 
-    # First subset by data stream
+    ## First subset by data stream
     if stream == 'all':
         filelist = [f for f in os.listdir(fpath) if f.endswith('.csv')]
     else:
         filelist = [f for f in os.listdir(fpath) if
                     f.endswith('.csv') and f.startswith(stream)]
 
-    # # add folder if not in './'
+    ## add folder if not in './'
     if fpath != './':
         if fpath.endswith('/'):
             filelist = [fpath + f for f in filelist]
         else:
             filelist = [fpath + '/' + f for f in filelist]
 
-    # # Then subset by empties (if applicable)
+    ## Then subset by empties (if applicable)
     if nonempty is True:
         filelist = [f for f in filelist if row_count(f) > 0]
 
@@ -183,6 +185,8 @@ def convert_mp4(fname, outname=None):
 
     Else, see: https://trac.ffmpeg.org/wiki/CompilationGuide
 
+    Also, never tested this on a Windows machine.
+
     """
     command = 'ffmpeg -i ' + fname + ' -ab 160k -ac 2 -ar 44100 -vn '
     if outname is None:
@@ -258,12 +262,12 @@ def import_df(flist, tstamp='timestamp', setindex=True):
     """
     slices = []
 
-    # # Iterate through and append all the dataframes
+    ## Iterate through and append all the dataframes
     for f in flist:
         frame = pd.read_csv(f)
         slices.append(frame)
 
-    # # Concatenate them into one large dataframe (ignore_index must be True)
+    ## Concatenate them into one large dataframe (ignore_index must be True)
     whole = pd.concat(slices, ignore_index=True)
 
     ## Turn timestamps into human-readable time (Remember, it's in UTC)
@@ -294,6 +298,8 @@ def ts_to_local(timestamp):
     if timestamp is None:
         return None
     timestamp = int(timestamp)
+
+    ## Should change this check eventually. (E.g., Dates in 2000 have len==12)
     if len(str(timestamp)) == 13:
         timestamp /= 1000
     return datetime.datetime.fromtimestamp(
@@ -312,6 +318,7 @@ def ts_to_utc(timestamp):
     if timestamp is None:
         return None
     timestamp = int(timestamp)
+    ## Should change this check eventually. (E.g., Dates in 2000 have len==12)
     if len(str(timestamp)) == 13:
         timestamp /= 1000
     return datetime.datetime.utcfromtimestamp(
@@ -448,12 +455,11 @@ def describe_user(fpath='./'):
     unless there's a reasonable need for this, just use standard downloads.
 
     Also know that the timestamps are **time of file creation**. Not first and
-    last observation, but first and last file created. Some sterams do not have
-    j
+    last observation, but first and last file created.
 
     """
-    # # Create a list of all the files, then split to get the type of data, then
-    # # turn it into a set to get unique values, then turn it into a sorted list
+    ## Create a list of all the files, then split to get the type of data, then
+    ## turn it into a set to get unique values, then turn it into a sorted list
     ## so we can import it into a pandas.DataFrame.
     ftypes = [f.split('_')[0] for f in os.listdir(fpath) if f.endswith('.csv')]
     ftypes = list(set(ftypes))
@@ -481,8 +487,8 @@ def describe_user(fpath='./'):
     ## straightforward because of inconsistent column naming and order. I've
     ## talked to the programmers about fixing it. Until then, first and last
     ## nonempty data file will have to suffice.
-    ## first split will get the timestamp. second split removes extension.
-    ## ternary operator checks for empty list and returns None if empty.
+    ## first split will get the timestamp. Second split removes extension.
+    ## Ternary operator checks for empty list and returns None if empty.
     first = [flist_nonempty[f][0].split('_')[-1].split('.csv')[0] if
              flist_nonempty[f] else None for f in ftypes]
     last = [flist_nonempty[f][-1].split('_')[-1].split('.csv')[0] if
@@ -530,6 +536,10 @@ def plot_gps(df, bounds=None, spacer=.001,
     psave : if true, save the plot
     savename : name of the plot to be saved
 
+    Notes
+    -----
+    Assumes you have `basemap` installed. So install it.
+
     """
     # # Data stuff
     # If time slice not specified, just make a huge slice. Fix this later.
@@ -576,14 +586,13 @@ def plot_gps(df, bounds=None, spacer=.001,
     plt.plot(x, y, '.', color='red', alpha=.75, ms=2)
 
 
-def duplicates(df, tbuffer = 30000, calls = False):
-    """Takes a call/text dataframe returns suspected duplicates.
+def duplicates(df, tbuffer = 30000):
+    """Takes a text dataframe returns suspected duplicates.
 
     Parameters
     ----------
-    df : a call or text dataframe created by import_df()
-    tbuffer : amount of time (in milliseconds) to consider the next observation
-    calls : if True, assumes call dataframe. Else, assumes text dataframe.
+    df : a text dataframe created by import_df()
+    tbuffer : amount of time (in microseconds) to consider the next observation
 
     Usage
     -----
@@ -598,19 +607,15 @@ def duplicates(df, tbuffer = 30000, calls = False):
     pd.DataFrame.duplicated() will be sufficient -- especially for small time
     frames. My solution will not be adequate if you need very reliable social
     data. Lastly, this solution is wildly inefficient (especially compared to
-    duplicated()).
+    pd.DataFrame.duplicated()).
 
     Buyer beware.
 
     """
-    ## Pick the correct index depending on call or text dataframe
     ## ts represents the timestamp column and ix represents the duration/length.
-    if calls is True:
-        ts = 2
-        ix = 0
-    else:
-        ts = 0
-        ix = 2
+    ## this might change so I didn't want to hard code it yet.
+    ts = 0
+    ix = 2
 
     ## Now we iterate through observations row by row and compare any sequential
     ## observations that fall within our specified time window. If they do,
