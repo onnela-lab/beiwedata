@@ -42,7 +42,7 @@ def row_count(fname):
 
     """
     with open(fname) as f:
-        for i, l in enumerate(f):
+        for i, _ in enumerate(f):
             pass
     return i
 
@@ -586,13 +586,13 @@ def plot_gps(df, bounds=None, spacer=.001,
     plt.plot(x, y, '.', color='red', alpha=.75, ms=2)
 
 
-def duplicates(df, tbuffer = 30000):
+def duplicates(df, tbuffer = 3000):
     """Takes a text dataframe returns suspected duplicates.
 
     Parameters
     ----------
     df : a text dataframe created by import_df()
-    tbuffer : amount of time (in microseconds) to consider the next observation
+    tbuffer : amount of time (in milliseconds) to consider the next observation
 
     Usage
     -----
