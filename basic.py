@@ -24,7 +24,7 @@ from matplotlib.dates import HourLocator
 from scipy.io import wavfile
 from mpl_toolkits.basemap import Basemap
 
-## Plot settings
+# # Plot settings
 pd.set_option('display.mpl_style', 'default')
 
 
@@ -351,7 +351,7 @@ def plot_accel(df, start_ts=None, end_ts=None, ts_col='timestamp',
         start_ts = make_timestamp(2000, 01, 01)
         end_ts = make_timestamp(2030, 12, 31)
 
-    # # Verify timestamps
+    ## Verify timestamps
     if len(str(start_ts) + str(end_ts)) < 25:
         print "\nInvalid timestamp(s). See make_timestamp().\n"
     else:
@@ -512,10 +512,12 @@ def plot_gps(df, bounds=None, spacer=.001,
              shpfile=None, shpname=None,
              start_ts=None, end_ts=None, ts_col='time',
              res='c', proj='merc',
-             dcoast = False, dbound = False,
-             dscale = True, sspacer = None, slength = 1,
+             dcoast=False, dbound=False,
+             dscale=True, sspacer=None, slength=1,
              psave=False, savename=None):
     """Plots users GPS points
+
+    ***NOTE***: NEED TO ADD psave function later.
 
     Parameters
     ----------
@@ -542,8 +544,8 @@ def plot_gps(df, bounds=None, spacer=.001,
     Assumes you have `basemap` installed. So install it.
 
     """
-    # # Data stuff
-    # If time slice not specified, just make a huge slice. Fix this later.
+    ## Data stuff
+    ## If time slice not specified, just make a huge slice. Fix this later.
     if (start_ts is None) and (end_ts is None):
         start_ts = make_timestamp(2000, 01, 01)
         end_ts = make_timestamp(2030, 12, 31)
@@ -576,7 +578,7 @@ def plot_gps(df, bounds=None, spacer=.001,
     if dscale is True:
         if sspacer is None:
             sspacer = (lllon, lllat)
-        m.drawmapscale(lat=spacer[1], lon=spacer[0],
+        m.drawmapscale(lat=sspacer[1], lon=sspacer[0],
                        lon0=df.longitude.mean(), lat0=df.latitude.mean(),
                        length=slength,
                        barstyle='fancy',
@@ -587,7 +589,7 @@ def plot_gps(df, bounds=None, spacer=.001,
     plt.plot(x, y, '.', color='red', alpha=.75, ms=2)
 
 
-def duplicates(df, tbuffer = 3000):
+def duplicates(df, tbuffer=3000):
     """Takes a text dataframe returns suspected duplicates.
 
     Parameters
@@ -627,11 +629,120 @@ def duplicates(df, tbuffer = 3000):
         if i + 1 == len(df):
             test = False
         elif df.iloc[i][ts] - df.iloc[i + 1][ts] < tbuffer:
-            if ((df.iloc[i][1] == df.iloc[i+1][1]) and
-                (df.iloc[i][ix] == df.iloc[i+1][ix]) and
-                (df.iloc[i][3] == df.iloc[i+1][3])):
-                    test = True
+            if ((df.iloc[i][1] == df.iloc[i + 1][1]) and
+                    (df.iloc[i][ix] == df.iloc[i + 1][ix]) and
+                    (df.iloc[i][3] == df.iloc[i + 1][3])):
+                test = True
             else:
                 test = False
         dupes.append(test)
     return dupes
+
+
+def rank_mac(df, start_ts, end_ts, n=5, cname='MAC', merged=True, agg='15S'):
+    """Takes a WiFi or Bluetooth dataframe and returns most frequent MACs
+
+    Parameters
+    ----------
+    df : A WiFi or Bluetooth dataframe
+    start_ts : A timestamp of starting time (see make_timestamp())
+    end_ts : A timestamp of ending time (see make_timestamp())
+    n : Number of "top" devices you want returned
+    cname : Column name of MAC address -- programmers didn't keep it consistent
+    merged : When True, will merge the ranking dataframe with the full df, else
+                just returns the rankings of MAC addresses
+    agg : Aggregation unit. See pandas resampling for more. E.g., '5Min', '1S'.
+
+    Notes
+    -----
+    The time aggregation (keyword `agg`) is necessary because in real life,
+    some Bluetooth instances happen just milliseconds apart. This makes for
+    strange and misleading charts since it appears the most frequent devices
+    have fewer markers. This is actually an artifact of temporal resolution.
+
+    Thus, I aggregate into 15 second windows (can be specified by the user) and
+    count devices that occur in that window only once.
+    """
+    ## subset by time
+    sub = df[(df['timestamp'] >= start_ts) &
+             (df['timestamp'] <= end_ts)].copy()
+
+    if agg is not None:
+        temp = sub.groupby(pd.TimeGrouper('15S'),
+                           as_index=False).apply(lambda x: x[cname])
+        sub['period'] = temp.index.get_level_values(0)
+
+    ## group by MAC IDs
+    subgrouped = sub.groupby(cname)
+
+    ## Count the number of observations (timestamps), sort, take first N
+    if agg is not None:
+        most_df = sub.groupby(cname).agg({'period': lambda x: x.nunique()}).sort('period', ascending=False).head(n)
+    else:
+        most_df = subgrouped.count().sort('timestamp', ascending=False).head(n)
+
+    ## Add a new variable that will dictate y-axis placement
+    most_df['yheight'] = np.arange(len(most_df))[::-1] + 1
+    most_df.reset_index(inplace=True)
+
+    if merged is True:
+        merged_df = pd.merge(sub, most_df.loc[:, ['yheight', cname]],
+                             how='outer', on=cname)
+        merged_df['dt'] = [datetime.datetime.utcfromtimestamp(int(t / 1000))
+                           for t in merged_df['timestamp']]
+        merged_df.set_index('dt', inplace=True)
+        return merged_df
+    else:
+        return most_df
+
+
+def plot_most_macs(df, spacer=.25, m='|', ms=6):
+    """Takes a ranked/merged Bluetooth or WiFi df and plots it
+
+    Parameters
+    ----------
+    df : a ranked and merged dataframe (see rank_mac())
+    spacer : ylim spacer
+    m : marker
+    ms : markersize
+
+    """
+    maxrank = int(df.yheight.max())
+    minrank = int(df.yheight.min())
+
+    fig, axes = plt.subplots()
+    plt.plot_date(x=df.index, y=df.yheight.values, marker=m, markersize=ms)
+
+    axes.set_ylim([minrank - spacer, maxrank + spacer])
+    axes.yaxis.set_ticks(np.arange(1, maxrank + 1))
+    axes.yaxis.set_ticklabels(np.arange(1, maxrank + 1)[::-1])
+
+    return fig, axes
+
+
+def plot_n_macs(df, start_ts, end_ts, cname='MAC', agg='5Min'):
+    """Creates subplots of MAC address -- uniques and cumulative
+
+    df : a Bluetooth or WiFi dataframe (see import_df())
+    start_ts : starting time (see make_timestamp())
+    end_ts : ending time (see make_timestamp())
+    cname : name of the MAC column
+    agg : aggregation unit
+    """
+    sub = df[(df['timestamp'] >= start_ts) &
+             (df['timestamp'] <= end_ts)].copy()
+    sub_grouped = sub.groupby(pd.TimeGrouper(agg))
+    sub_unique = sub_grouped[cname].nunique()
+
+    fig, axes = plt.subplots(2, sharex=True)
+
+    ## Unique devices
+    axes[0].plot_date(x=sub_unique.index, y=sub_unique.values, fmt='k-')
+    axes[0].set_ylabel('Unique Devices')
+
+    ## Cumulative devices
+    axes[1].plot_date(x=sub_unique.index, y=sub_unique.cumsum().values, fmt='k-')
+    axes[1].set_ylabel('Cumulative')
+
+    return fig, axes
+
