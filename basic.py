@@ -260,11 +260,12 @@ def import_df(flist, tstamp='timestamp', setindex=True):
     the `tstamp` parameter.
 
     """
-    slices = []
-
     ## Iterate through and append all the dataframes
+    slices = []
     for f in flist:
         frame = pd.read_csv(f)
+        if "wifiLog" in f:
+            frame[tstamp] = int(f.split('_')[1].split('.')[0])
         slices.append(frame)
 
     ## Concatenate them into one large dataframe (ignore_index must be True)
