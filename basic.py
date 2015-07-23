@@ -24,10 +24,6 @@ from matplotlib.dates import HourLocator
 from scipy.io import wavfile
 from mpl_toolkits.basemap import Basemap
 
-# # Plot settings
-pd.set_option('display.mpl_style', 'default')
-
-
 def row_count(fname):
     """Returns number (as int) of observations in a file.
 
@@ -402,7 +398,7 @@ def plot_accel(df, start_ts=None, end_ts=None, ts_col='timestamp',
 
 
 def plot_wav(fname, channel=0, psave=False, savename=None, fext='.pdf'):
-    """Takes a .wav file and plots amplitude over time.
+    """Takes a .wav file and plots amplitude over time -- returns as fig
 
     Parameters
     ----------
@@ -431,15 +427,14 @@ def plot_wav(fname, channel=0, psave=False, savename=None, fext='.pdf'):
     plt.plot(timearray, s1, color='k')
     plt.ylabel('Amplitude')
     plt.xlabel('Time (ms)')
-    plt.show()
+    fig = plt.gcf()
     if psave is True:
-        figure = plt.gcf()
-        figure.set_size_inches(12, 6)
+        fig.set_size_inches(12, 6)
         if savename is None:
             plt.savefig(fname[:-4] + fext, bbox_inches='tight')
         else:
             plt.savefig(savename + fext, bbox_inches='tight')
-        plt.close()
+    return fig
 
 
 def describe_user(fpath='./'):
@@ -508,12 +503,11 @@ def describe_user(fpath='./'):
     return df
 
 
-def plot_gps(df, bounds=None, spacer=.001,
-             shpfile=None, shpname=None,
-             start_ts=None, end_ts=None, ts_col='time',
+def plot_gps(df, start_ts, end_ts, bounds=None, spacer=.001,
+             shpfile=None, shpname=None, ts_col='time',
              res='c', proj='merc',
              dcoast=False, dbound=False,
-             dscale=True, sspacer=None, slength=1,
+             dscale=False, sspacer=None, slength=1,
              psave=False, savename=None):
     """Plots users GPS points
 
@@ -522,6 +516,8 @@ def plot_gps(df, bounds=None, spacer=.001,
     Parameters
     ----------
     df : a pandas.DataFrame containing GPS data (via import_df())
+    start_ts : starting timestamp (see make_timestamp())
+    end_ts : ending timestamp (see make_timestamp())
     bounds : lower left and upper right bounds of the basemap plot
         If specified, should be a list specifying
             [llcrnrlat, llcrnrlon, urcrnrlat, urcrnrlon]
@@ -530,12 +526,15 @@ def plot_gps(df, bounds=None, spacer=.001,
     shpfile : an overlay shapefile if you want (e.g., roads)
     shpname : basemaps likes it when you specify a name with your
         shp file
-    start_ts : starting timestamp data slice (see make_timestamp())
-    end_ts : ending timestamp data slice (see make_timestamp())
     ts_col : the name of the timestamp column. I asked programmers
         to make this consistent, but for now, specify it.
     res : resolution of basemap drawing (default is 'full')
     proj : projection of basemap plot (default is mercator)
+    dcoast : draw the coastline
+    dbound : draw map boundaries
+    dscale : draw a map scale
+    sspacer : scale spacer
+    slength : length (in km) of scale
     psave : if true, save the plot
     savename : name of the plot to be saved
 
@@ -550,14 +549,14 @@ def plot_gps(df, bounds=None, spacer=.001,
         start_ts = make_timestamp(2000, 01, 01)
         end_ts = make_timestamp(2030, 12, 31)
 
-    df = df[(df[ts_col] >= start_ts) & (df[ts_col] <= end_ts)]
+    sub = df[(df[ts_col] >= start_ts) & (df[ts_col] <= end_ts)].copy()
 
     ## Set up map
     if bounds is None:
-        lllat = df.latitude.min() - spacer
-        lllon = df.longitude.min() - spacer
-        urlat = df.latitude.max() + spacer
-        urlon = df.longitude.max() + spacer
+        lllat = sub.latitude.min() - spacer
+        lllon = sub.longitude.min() - spacer
+        urlat = sub.latitude.max() + spacer
+        urlon = sub.longitude.max() + spacer
     else:
         lllat = bounds[0]
         lllon = bounds[1]
@@ -577,16 +576,22 @@ def plot_gps(df, bounds=None, spacer=.001,
         m.readshapefile(shpfile, shpname)
     if dscale is True:
         if sspacer is None:
-            sspacer = (lllon, lllat)
-        m.drawmapscale(lat=sspacer[1], lon=sspacer[0],
-                       lon0=df.longitude.mean(), lat0=df.latitude.mean(),
+            sspacer = [lllon, lllat]
+        m.drawmapscale(lat=sub.latitude.min() - sspacer[1],
+                       lon=sub.longitude.min() + sspacer[0],
+                       lat0=sub.latitude.mean(),
+                       lon0=sub.longitude.mean(),
                        length=slength,
                        barstyle='fancy',
                        format='%.2f')
-    x, y = m(df.longitude.values, df.latitude.values)
+    x, y = m(sub.longitude.values, sub.latitude.values)
 
     ## Plotting
     plt.plot(x, y, '.', color='red', alpha=.75, ms=2)
+
+    fig = plt.gcf()
+
+    return fig
 
 
 def duplicates(df, tbuffer=3000):
