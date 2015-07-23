@@ -198,7 +198,7 @@ fig.savefig('calls_and_texts.pdf', bbox_inches='tight')
 ```
 
 ## Bluetooth plots
-![Bluetooth plots 1]()
+![Bluetooth plots 1](https://github.com/onnela-lab/beiwedata/blob/master/example%20plots/bluetooth_top_devices.png)
 
 ```
 bfiles = list_data_files(stream='blue', fpath='./mkdata')
@@ -221,7 +221,7 @@ fig.set_size_inches(12, 4)
 fig.savefig('bluetooth_top_devices.png', bbox_inches='tight', dpi=150)
 ```
 
-![Bluetooth plots 2]()
+![Bluetooth plots 2](https://github.com/onnela-lab/beiwedata/blob/master/example%20plots/bluetooth_devices.png)
 
 ```
 fig, axes = plot_n_macs(bdf, start_ts, end_ts)
@@ -234,7 +234,7 @@ fig.savefig('bluetooth_devices.png', bbox_inches='tight', dpi=150)
 ```
 
 ## WiFi plots
-![Wifi plots 1]()
+![Wifi plots 1](https://github.com/onnela-lab/beiwedata/blob/master/example%20plots/wifi_top_networks.png)
 
 ```
 wfiles = list_data_files(stream='wifi', fpath='./mkdata')
@@ -256,7 +256,7 @@ fig.set_size_inches(18, 9)
 fig.savefig('wifi_networks.png', bbox_inches='tight', dpi=150)
 ```
 
-![Wifi plots 2]()
+![Wifi plots 2](https://github.com/onnela-lab/beiwedata/blob/master/example%20plots/wifi_networks.png)
 
 ```
 fig, axes = plot_n_macs(wdf, start_ts, end_ts, cname='hashed MAC')
