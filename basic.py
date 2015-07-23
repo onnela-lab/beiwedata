@@ -751,3 +751,62 @@ def plot_n_macs(df, start_ts, end_ts, cname='MAC', agg='5Min'):
 
     return fig, axes
 
+
+def plot_calls_texts(calldf, textdf, start_ts, end_ts, xbuffer = 5):
+
+    ## Subset both datasets
+    sub_call = calldf[(calldf['timestamp'] >= start_ts) &
+                      (calldf['timestamp'] <= end_ts)].copy()
+    sub_text = textdf[(textdf['timestamp'] >= start_ts) &
+                      (textdf['timestamp'] <= end_ts)].copy()
+
+    ## Extract incoming and outgoing texts
+    sub_text['sms'] = sub_text.apply(lambda row: bd_internal._sms_sort(row),
+                                     axis=1)
+    inctexts = sub_text.loc[sub_text['sent vs received'] == 'received SMS',
+                            'sms']
+    outtexts = sub_text.loc[sub_text['sent vs received'] == 'sent SMS',
+                            'sms']
+
+    ## Extract incoming and outgoing calls
+    sub_call['call'] = sub_call.apply(lambda row: bd_internal._call_sort(row),
+                                      axis=1)
+    sub_call['callend'] = sub_call.apply(lambda row: bd_internal._call_end(row),
+                                         axis=1)
+    inccalls = sub_call.loc[sub_call['call type'] == 'Incoming Call',
+                            ['call', 'callend']]
+    outcalls = sub_call.loc[sub_call['call type'] == 'Outgoing Call',
+                            ['call', 'callend']]
+    misscalls = sub_call.loc[sub_call['call type'] == 'Missed Call',
+                             ['call', 'callend']]
+
+    ## Plot
+    fig, axes = plt.subplots()
+    axes.grid(False)
+
+    ## Plot texts
+    plt.plot_date(x=inctexts.index, y=inctexts.values, marker='v', alpha=.8)
+    plt.plot_date(x=outtexts.index, y=outtexts.values, marker='^',
+                  markerfacecolor='none')
+
+    ## Plot calls
+    plt.plot_date(x=misscalls.index, y=misscalls.call.values, marker='x')
+    axes.hlines(y=inccalls['call'],
+                xmin=inccalls.index,
+                xmax=inccalls.callend.values,
+                lw=5)
+    axes.hlines(y=outcalls['call'],
+                xmin=outcalls.index,
+                xmax=outcalls.callend.values,
+                lw=10)
+
+    ## Plot settings
+    axes.set_ylim([.75, 1.75])
+    axes.yaxis.set_ticks([1, 1.5])
+    axes.yaxis.set_ticklabels(['SMS', 'Calls'])
+    x_buffer = datetime.timedelta(seconds=60 * xbuffer)
+    x_start = datetime.datetime.utcfromtimestamp(start_ts/1000) - x_buffer
+    x_end = datetime.datetime.utcfromtimestamp(end_ts/1000) + x_buffer
+    axes.set_xlim([x_start, x_end])
+
+    return fig, axes

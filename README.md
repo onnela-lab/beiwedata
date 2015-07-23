@@ -177,3 +177,91 @@ plt.close('all')
 
 ## Calls and texts plot
 ![Calls and texts](https://github.com/onnela-lab/beiwedata/blob/master/example%20plots/calls_and_texts.png)
+
+```
+cfiles = list_data_files(stream='call', fpath='user')
+tfiles = list_data_files(stream='text', fpath='user')
+tdf = import_df(tfiles)
+cdf = import_df(cfiles)
+
+fig, axes = plot_calls_texts(cdf, tdf, start_ts, end_ts)
+
+axes.set_xlim([datetime.datetime(2015, 6, 22, 13),
+               datetime.datetime(2015, 6, 22, 21)])
+
+for label in axes.xaxis.get_ticklabels()[::2]:
+    label.set_visible(False)
+
+fig = plt.gcf()
+fig.set_size_inches(12, 4)
+fig.savefig('calls_and_texts.pdf', bbox_inches='tight')
+```
+
+## Bluetooth plots
+![Bluetooth plots 1]()
+
+```
+bfiles = list_data_files(stream='blue', fpath='./mkdata')
+bdf = import_df(bfiles)
+
+start_ts = make_timestamp(2015, 5, 5, 23, 55)
+end_ts = make_timestamp(2015, 5, 7, 0, 5)
+
+freq_bt = rank_mac(bdf, start_ts, end_ts, n=10)
+fig, axes = plot_most_macs(df = freq_bt)
+
+axes.set_xlim([datetime.datetime(2015, 5, 5, 23, 55),
+                datetime.datetime(2015, 5, 7, 0, 5)])
+for label in axes.xaxis.get_ticklabels()[::2]:
+    label.set_visible(False)
+axes.set_title('Top Bluetooth Devices')
+axes.set_ylabel('Unique Bluetooth Devices')
+fig = plt.gcf()
+fig.set_size_inches(12, 4)
+fig.savefig('bluetooth_top_devices.png', bbox_inches='tight', dpi=150)
+```
+
+![Bluetooth plots 2]()
+
+```
+fig, axes = plot_n_macs(bdf, start_ts, end_ts)
+axes[0].set_title('Bluetooth devices throughout the day')
+for label in axes[1].xaxis.get_ticklabels()[1::2]:
+    label.set_visible(False)
+fig = plt.gcf()
+fig.set_size_inches(12, 8)
+fig.savefig('bluetooth_devices.png', bbox_inches='tight', dpi=150)
+```
+
+## WiFi plots
+![Wifi plots 1]()
+
+```
+wfiles = list_data_files(stream='wifi', fpath='./mkdata')
+wdf = import_df(wfiles)
+start_ts = make_timestamp(2015, 5, 5, 23, 55)
+end_ts = make_timestamp(2015, 5, 7, 0, 5)
+
+freq_w = rank_mac(wdf, start_ts, end_ts, cname='hashed MAC', n=100)
+fig, axes = plot_most_macs(df = freq_w, m='.')
+axes.grid(False)
+axes.set_title('Top WiFi Networks')
+axes.set_ylabel('Unique WiFi Networks')
+axes.set_ylim([0, 101])
+for i, label in enumerate(axes.yaxis.get_ticklabels()):
+    if (i % 10 != 0) and (i < len(axes.yaxis.get_ticklabels()) - 1):
+        label.set_visible(False)
+fig = plt.gcf()
+fig.set_size_inches(18, 9)
+fig.savefig('wifi_networks.png', bbox_inches='tight', dpi=150)
+```
+
+![Wifi plots 2]()
+
+```
+fig, axes = plot_n_macs(wdf, start_ts, end_ts, cname='hashed MAC')
+axes[0].set_title('Wifi networks throughout the day')
+fig = plt.gcf()
+fig.set_size_inches(12, 8)
+fig.savefig('wifi_networks.png', bbox_inches='tight', dpi=150)
+```
