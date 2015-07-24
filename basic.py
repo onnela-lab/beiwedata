@@ -716,7 +716,7 @@ def plot_most_macs(df, spacer=.25, m='|', ms=6):
     minrank = int(df.yheight.min())
 
     fig, axes = plt.subplots()
-    plt.plot_date(x=df.index, y=df.yheight.values, marker=m, markersize=ms)
+    axes.plot_date(x=df.index, y=df.yheight.values, marker=m, markersize=ms)
 
     axes.set_ylim([minrank - spacer, maxrank + spacer])
     axes.yaxis.set_ticks(np.arange(1, maxrank + 1))
