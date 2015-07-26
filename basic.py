@@ -682,7 +682,8 @@ def rank_mac(df, start_ts, end_ts, n=5, cname='MAC', merged=True, agg='15S'):
 
     ## Count the number of observations (timestamps), sort, take first N
     if agg is not None:
-        most_df = sub.groupby(cname).agg({'period': lambda x: x.nunique()}).sort('period', ascending=False).head(n)
+        most_df = sub.groupby(cname).agg({'period': lambda x:
+                          x.nunique()}).sort('period', ascending=False).head(n)
     else:
         most_df = subgrouped.count().sort('timestamp', ascending=False).head(n)
 
@@ -701,7 +702,10 @@ def rank_mac(df, start_ts, end_ts, n=5, cname='MAC', merged=True, agg='15S'):
         return most_df
 
 
-def plot_most_macs(df, spacer=.25, m='|', ms=6):
+def plot_most_macs(macdf, spacer=.25, m='|', ms=6,
+                   plot_others=False, strength=None,
+                   others_spacer=10, others_marker='|', others_color='k',
+                   others_ms=6):
     """Takes a ranked/merged Bluetooth or WiFi df and plots it
 
     Parameters
@@ -710,19 +714,73 @@ def plot_most_macs(df, spacer=.25, m='|', ms=6):
     spacer : ylim spacer
     m : marker
     ms : markersize
+    plot_others : Boolean -- should you plot all unranked MACs (on one line)?
+    others_spacer : How much space to separate others line
+    strength : plot colors based on strength quantile (e.g., 4 - quartiles)
 
     """
+    df = macdf.copy()
+
+    if plot_others is True:
+        naheight = int(df.yheight.min()) - others_spacer
+        df.yheight.fillna(naheight, inplace=True)
+
     maxrank = int(df.yheight.max())
     minrank = int(df.yheight.min())
 
-    fig, axes = plt.subplots()
-    axes.plot_date(x=df.index, y=df.yheight.values, marker=m, markersize=ms)
+    fig, ax = plt.subplots()
 
-    axes.set_ylim([minrank - spacer, maxrank + spacer])
-    axes.yaxis.set_ticks(np.arange(1, maxrank + 1))
-    axes.yaxis.set_ticklabels(np.arange(1, maxrank + 1)[::-1])
+    ## Plot colors based on signal strength quantile
+    if strength is None:
+        if plot_others is False:
+            ax.plot_date(x=df.index, y=df.yheight.values,
+                         marker=m, markersize=ms)
+        else:
+            NA_index = (df['yheight'] == naheight)
+            ax.plot_date(x=df.loc[~NA_index, ].index,
+                         y=df.loc[~NA_index, 'yheight'].values,
+                         marker=m, markersize=ms)
+            ax.plot_date(x=df.loc[NA_index, ].index,
+                         y=df.loc[NA_index, 'yheight'].values,
+                         marker=others_marker, markersize=others_ms,
+                         c=others_color)
+    else:
+        # gets a colormap from matplotlib -- evenly spaced according categories
+        # note that we start at .3 because 0 is white and looks bad.
+        colormap = [plt.cm.Blues(i) for i in np.linspace(.3, 1, strength)]
+        ax.set_color_cycle(colormap)
 
-    return fig, axes
+        # create quantile groupings -- note we do NOT drop unranked ones
+        df['strength'] = pd.cut(df.RSSI, strength, labels=False)
+
+        # loop it and plot. slight alpha for overlapping cases.
+        for q in range(strength):
+            # create a boolean array for indexing the dataframe
+            if plot_others is True:
+                row_index = (df['strength'] == q) & (df['yheight'] > naheight)
+            else:
+                row_index = df['strength'] == q
+
+            # plot
+            ax.plot_date(x=df.loc[row_index, ].index,
+                         y=df.loc[row_index, 'yheight'].values,
+                         marker=m, markersize=ms, alpha=.9)
+
+        if plot_others is True:
+            ax.set_color_cycle(None)
+            NA_index = (df['yheight'] == naheight)
+            ax.plot_date(x=df.loc[NA_index, ].index,
+                         y=df.loc[NA_index, 'yheight'].values,
+                         c=others_color, marker=others_marker, markersize=ms)
+
+    # plot modifications
+    ax.set_ylim([minrank - spacer, maxrank + spacer])
+
+    if plot_others is False:
+        ax.yaxis.set_ticks(np.arange(1, maxrank + 1))
+        ax.yaxis.set_ticklabels(np.arange(1, maxrank + 1)[::-1])
+
+    return fig, ax
 
 
 def plot_n_macs(df, start_ts, end_ts, cname='MAC', agg='5Min'):
@@ -742,11 +800,15 @@ def plot_n_macs(df, start_ts, end_ts, cname='MAC', agg='5Min'):
     fig, axes = plt.subplots(2, sharex=True)
 
     ## Unique devices
-    axes[0].plot_date(x=sub_unique.index, y=sub_unique.values, fmt='k-')
+    axes[0].plot_date(x=sub_unique.index,
+                      y=sub_unique.values,
+                      fmt='k-')
     axes[0].set_ylabel('Unique Devices')
 
     ## Cumulative devices
-    axes[1].plot_date(x=sub_unique.index, y=sub_unique.cumsum().values, fmt='k-')
+    axes[1].plot_date(x=sub_unique.index,
+                      y=sub_unique.cumsum().values,
+                      fmt='k-')
     axes[1].set_ylabel('Cumulative')
 
     return fig, axes
