@@ -300,7 +300,7 @@ axes.set_ylim([-8, 101])
 ```
 This should be considered a diagnostic convenience -- an easy way to tell if we are still collecting WiFi/Bluetooth data. However, note that this information is redundant with `plot_n_macs()`.
 
-### Wifi with `plot_ohers` and `strength`
+### Wifi with `plot_others` and `strength`
 And obviously you can combine both `plot_others=True` with `strength` together:
 
 ![Wifi plot with strength and others](https://github.com/onnela-lab/beiwedata/blob/mk-development/example%20plots/wifi_top_networks_strength4_others.png)
