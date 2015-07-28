@@ -181,7 +181,7 @@ plt.close('all')
 ```
 
 ## Calls and texts plot
-![Calls and texts](https://github.com/onnela-lab/beiwedata/blob/master/example%20plots/calls_and_texts.png)
+![Calls and texts](https://github.com/onnela-lab/beiwedata/blob/master/example%20plots/call_text_figure.png)
 
 ```
 cfiles = list_data_files(stream='call', fpath='user')
@@ -267,7 +267,7 @@ fig.savefig('wifi_networks.png', bbox_inches='tight', dpi=150)
 You may be interested in incorporating signal strength (`RSSI`) into these plots. Signal strength is highly variable by a number of external factors and it probably not something you want to plot the raw data for; however, `plot_most_macs()` does allow you to quickly plot percentiles of strength.
 
 For example, assume we are the quartiles of signal strength, we just add `strength=4` to `plot_most_macs()`:
-![Wifi plot with strength 4](https://github.com/onnela-lab/beiwedata/blob/mk-development/example%20plots/wifi_top_networks_strength4.png)
+![Wifi plot with strength 4](https://github.com/onnela-lab/beiwedata/blob/master/example%20plots/wifi_top_networks_strength4.png)
 
 ```
 fig, axes = plot_most_macs(macdf = freq_w, m='.', strength=4)
@@ -285,12 +285,12 @@ fig.savefig('wifi_top_networks_strength4.png', bbox_inches='tight', dpi=150)
 
 This colors by quantiles so any arbitrary (integer) number is allowed. However, the colormapping has been cut off from [0, 1] to [.3, 1] since 0 (i.e., white) comes out looking too faint. Thus, for quantiles larger than about 5 or 6, differences become hard to see. Here is one with `strength=25`: 
 
-![Wifi plot with strength 25](https://github.com/onnela-lab/beiwedata/blob/mk-development/example%20plots/wifi_top_networks_strength25.png)
+![Wifi plot with strength 25](https://github.com/onnela-lab/beiwedata/blob/master/example%20plots/wifi_top_networks_strength25.png)
 
 ### Wifi with `plot_others` option
 We can also plot all others (that is, all devices not in ranking) by setting `plot_others=True`:
 
-![Wifi plot with others](https://github.com/onnela-lab/beiwedata/blob/mk-development/example%20plots/wifi_top_networks_others.png?raw=true)
+![Wifi plot with others](https://github.com/onnela-lab/beiwedata/blob/master/example%20plots/wifi_top_networks_others.png)
 
 ```
 fig, axes = _macs(macdf = freq_w, m='.', plot_others=True)
@@ -304,7 +304,7 @@ This should be considered a diagnostic convenience -- an easy way to tell if we 
 ### Wifi with `plot_others` and `strength`
 And obviously you can combine both `plot_others=True` with `strength` together:
 
-![Wifi plot with strength and others](https://github.com/onnela-lab/beiwedata/blob/mk-development/example%20plots/wifi_top_networks_strength4_others.png)
+![Wifi plot with strength and others](https://github.com/onnela-lab/beiwedata/blob/master/example%20plots/wifi_top_networks_strength4_others.png)
 
 ```
 fig, axes = plot_most_macs(macdf = freq_w, m='.', strength=4,
