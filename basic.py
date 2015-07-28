@@ -773,12 +773,10 @@ def plot_most_macs(macdf, spacer=.25, m='|', ms=6,
                          y=df.loc[NA_index, 'yheight'].values,
                          c=others_color, marker=others_marker, markersize=ms)
 
-    # plot modifications
+    # y-axis modifications
     ax.set_ylim([minrank - spacer, maxrank + spacer])
-
-    if plot_others is False:
-        ax.yaxis.set_ticks(np.arange(1, maxrank + 1))
-        ax.yaxis.set_ticklabels(np.arange(1, maxrank + 1)[::-1])
+    ax.yaxis.set_ticks(np.arange(1, maxrank + 1))
+    ax.yaxis.set_ticklabels(np.arange(1, maxrank + 1)[::-1])
 
     return fig, ax
 
