@@ -57,7 +57,7 @@ Accelerometer files contain 5 columns: `timestamp`, `accuracy`, `x`, `y`, and `z
 **NOTE:** It is an open question about the bounds of the `x`, `y`, and `z`. In all our test data, the bounds are [-20, 20]; however, this may be specific to each handset and/or version of Android.
 
 ## Bluetooth
-Bluetooth files contain: `timestamp`, `MAC`, and `RSSI`. Note that `MAC` is actually the *hashed* MAC address of other devices.
+Bluetooth files contain: `timestamp`, `MAC`, and `RSSI`. Note that `MAC` is actually the *hashed* MAC address of other devices. `RSSI` is in dBm.
 
 ## Phone calls
 Call logs contain: `hashed phone number`, `call type`, `date`, and `duration in seconds`. Note that `date` is the equivalent of `timestamp` in other files (i.e., it is not a human-readable datetime object). I have asked the programmers to fix this, but as of the most recent version, it has not been addressed.
@@ -89,10 +89,11 @@ Text logs contain: `timestamp`, `hashed phone number`, `sent vs received`, `mess
 Self-recorded voice memos. Will vary by study.
 
 ## WiFi
-Contains `hashed MAC`, `frequency`, and `RSSI`. Frequency will always be 2.4GHz or 5GHz so I'm not sure how useful that is.
+Contains `hashed MAC`, `frequency`, and `RSSI`. Frequency will always be 2.4GHz or 5GHz so I'm not sure how useful that is. `RSSI` is in dBm.
 
 # Known Data Issues
 - The `textsLog` data often contain duplicates (usually 3 or 4 identical rows). This seems to be more common for sent texts but can occur for received texts. 
+- It appears that `timestamp`s are often out of order or duplicated in the acclerometer data. Possibly in other data as well. Working with programmers on a fix or explanation.
 
 # Functions
 More information about each function can be found in the function's docstring (i.e., `help([function])` or `?[function]`). This is just a list of functions to give you an idea of what has already been done.

@@ -857,28 +857,36 @@ def plot_calls_texts(calldf, textdf, start_ts, end_ts, xbuffer = 5):
     axes.grid(False)
 
     ## Plot texts
-    plt.plot_date(x=inctexts.index, y=inctexts.values, marker='v', alpha=.8)
-    plt.plot_date(x=outtexts.index, y=outtexts.values, marker='^',
-                  markerfacecolor='none')
+    plt.plot_date(x=inctexts.index, y=inctexts.values, marker='+', c='k', ms=7)
+    plt.plot_date(x=outtexts.index, y=outtexts.values, marker='+', c='k', ms=7)
 
     ## Plot calls
+    plt.plot_date(x=inccalls.index, y=inccalls.call.values, marker='|',
+                  c='k', ms=9)
+    plt.plot_date(x=outcalls.index, y=outcalls.call.values, marker='|',
+                  c='k', ms=9)
     plt.plot_date(x=misscalls.index, y=misscalls.call.values, marker='x')
     axes.hlines(y=inccalls['call'],
                 xmin=inccalls.index,
                 xmax=inccalls.callend.values,
-                lw=5)
+                lw=4)
     axes.hlines(y=outcalls['call'],
                 xmin=outcalls.index,
                 xmax=outcalls.callend.values,
-                lw=10)
+                lw=4)
+    plt.plot_date(x=misscalls.index, y=misscalls.call.values, marker='x',
+                  c='red', ms=6)
 
     ## Plot settings
+    ## Plot settings
     axes.set_ylim([.75, 1.75])
-    axes.yaxis.set_ticks([1, 1.5])
-    axes.yaxis.set_ticklabels(['SMS', 'Calls'])
+    axes.yaxis.set_ticks([.95, 1.05, 1.45, 1.55])
+    axes.yaxis.set_ticklabels(['Incoming Text', 'Outgoing Text',
+                               'Incoming Call', 'Outgoing Call'])
     x_buffer = datetime.timedelta(seconds=60 * xbuffer)
     x_start = datetime.datetime.utcfromtimestamp(start_ts/1000) - x_buffer
     x_end = datetime.datetime.utcfromtimestamp(end_ts/1000) + x_buffer
     axes.set_xlim([x_start, x_end])
 
     return fig, axes
+
