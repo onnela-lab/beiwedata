@@ -52,7 +52,7 @@ In order to use most conversion tools (which are designed for [Unix time](https:
 See [EpochConverter](http://www.epochconverter.com/) for more ways to manipulate Unix time into various programming languages.
 
 ## Accelerometer data
-Accelerometer files contain 5 columns: `timestamp`, `accuracy`, `x`, `y`, and `z`.
+Accelerometer files contain 5 columns: `timestamp`, `accuracy`, `x`, `y`, and `z`. Accelerometer `on` and `off` periods vary as well as sampling rates. This is due to Android OS specifications and is meant to save battery life. Thus, when setting the accelerometer to go on or off every 5 minutes, you may see periods of up to 20 minutes without sampling. These periods should also coincide with when the phone was not being moved much. High frequency sampling occurs when the screen is on; however, the rate of sampling differs by OS and phone.
 
 **NOTE:** It is an open question about the bounds of the `x`, `y`, and `z`. In all our test data, the bounds are [-20, 20]; however, this may be specific to each handset and/or version of Android.
 
@@ -93,7 +93,8 @@ Contains `hashed MAC`, `frequency`, and `RSSI`. Frequency will always be 2.4GHz 
 
 # Known Data Issues
 - The `textsLog` data often contain duplicates (usually 3 or 4 identical rows). This seems to be more common for sent texts but can occur for received texts. 
-- It appears that `timestamp`s are often out of order or duplicated in the acclerometer data. Possibly in other data as well. Working with programmers on a fix or explanation.
+- It appears that `timestamp`s are often out of order -- this is expected behavior. The OS queues up commands and writes when optimally efficient for battery life. This will rarely (~ `3 / 1.4 million` in my own data) lead to one line being written after others.
+- Sometimes, acclerometer data will appear duplicated -- that is, two lines with identical timestamps. Usually caused by accelerometer taking two measurements within the same millisecond. Relatively rare (~ `1300 / 1.4 million` in my data).
 
 # Functions
 More information about each function can be found in the function's docstring (i.e., `help([function])` or `?[function]`). This is just a list of functions to give you an idea of what has already been done.
