@@ -24,6 +24,30 @@ from matplotlib.dates import HourLocator
 from scipy.io import wavfile
 from mpl_toolkits.basemap import Basemap
 
+# Internal helper functions
+def _sms_sort(row, yval=1, spacer=.05):
+    if row['sent vs received'] == 'sent SMS':
+        return yval+spacer
+    if row['sent vs received'] == 'received SMS':
+        return yval-spacer
+
+def _call_end(row):
+    start_t = datetime.datetime.utcfromtimestamp(int(row['timestamp'] / 1000))
+    end_t = start_t + datetime.timedelta(0, row['duration in seconds'])
+    return end_t
+
+def _call_sort(row, yval=1.5, spacer=.05):
+    if row['call type'] == "Incoming Call":
+        return yval-spacer
+    ## keep missed calls separate for now in case we change this later
+    elif row['call type'] == "Missed Call":
+        return yval-spacer
+    elif row['call type'] == "Outgoing Call":
+        return yval+spacer
+    else:
+        return None
+
+
 def row_count(fname):
     """Returns number (as int) of observations in a file.
 
@@ -43,7 +67,7 @@ def row_count(fname):
     return i
 
 
-def list_data_files(stream, fpath='./', nonempty=True,
+def list_data_files(fpath, stream, nonempty=True,
                     start_t=None, end_t=None):
     """Returns a list of filenames for specified data stream and timeframe
 
@@ -118,7 +142,7 @@ def list_data_files(stream, fpath='./', nonempty=True,
         return filelist
 
 
-def list_audio_files(fpath='./', start_t=None, end_t=None,
+def list_audio_files(fpath, start_t=None, end_t=None,
                      mp4only=False):
     """Returns a list of audio files
 
@@ -437,7 +461,7 @@ def plot_wav(fname, channel=0, psave=False, savename=None, fext='.pdf'):
     return fig
 
 
-def describe_user(fpath='./'):
+def describe_user(fpath):
     """Creates a summary dataframe for specified users
 
     Parameters
@@ -831,18 +855,15 @@ def plot_calls_texts(calldf, textdf, start_ts, end_ts, xbuffer = 5):
                       (textdf['timestamp'] <= end_ts)].copy()
 
     ## Extract incoming and outgoing texts
-    sub_text['sms'] = sub_text.apply(lambda row: bd_internal._sms_sort(row),
-                                     axis=1)
+    sub_text['sms'] = sub_text.apply(lambda row: _sms_sort(row), axis=1)
     inctexts = sub_text.loc[sub_text['sent vs received'] == 'received SMS',
                             'sms']
     outtexts = sub_text.loc[sub_text['sent vs received'] == 'sent SMS',
                             'sms']
 
     ## Extract incoming and outgoing calls
-    sub_call['call'] = sub_call.apply(lambda row: bd_internal._call_sort(row),
-                                      axis=1)
-    sub_call['callend'] = sub_call.apply(lambda row: bd_internal._call_end(row),
-                                         axis=1)
+    sub_call['call'] = sub_call.apply(lambda row: _call_sort(row), axis=1)
+    sub_call['callend'] = sub_call.apply(lambda row: _call_end(row), axis=1)
     inccalls = sub_call.loc[sub_call['call type'] == 'Incoming Call',
                             ['call', 'callend']]
     outcalls = sub_call.loc[sub_call['call type'] == 'Outgoing Call',
@@ -855,8 +876,8 @@ def plot_calls_texts(calldf, textdf, start_ts, end_ts, xbuffer = 5):
     axes.grid(False)
 
     ## Plot texts
-    plt.plot_date(x=inctexts.index, y=inctexts.values, marker='+', c='k', ms=7)
-    plt.plot_date(x=outtexts.index, y=outtexts.values, marker='+', c='k', ms=7)
+    plt.plot_date(x=inctexts.index, y=inctexts.values, marker='|', c='k', ms=7)
+    plt.plot_date(x=outtexts.index, y=outtexts.values, marker='|', c='k', ms=7)
 
     ## Plot calls
     plt.plot_date(x=inccalls.index, y=inccalls.call.values, marker='|',
@@ -887,4 +908,3 @@ def plot_calls_texts(calldf, textdf, start_ts, end_ts, xbuffer = 5):
     axes.set_xlim([x_start, x_end])
 
     return fig, axes
-
