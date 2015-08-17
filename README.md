@@ -67,7 +67,7 @@ GPS files contain: `time`, `latitude`, `longitude`, `altitude`, and `accuracy`. 
 
 ## IDs
 ID files should only contain one row and in most cases should one have one instance. A bug exists where this file may be created again, but I have not found a way to replicate the bug reliably. This file will contain the users own `patient id`, `(hashed) MAC`, `(hashed) phone_number`, and `device_id`.
-
+K
 **NOTE:** I'm assuming device ID is bluetooth MAC address, but am not sure. I'm also assuming hashed MAC is actually the phone's WiFi MAC address.
 
 ## Beiwe logs
@@ -93,8 +93,10 @@ Contains `hashed MAC`, `frequency`, and `RSSI`. Frequency will always be 2.4GHz 
 
 # Known Data Issues
 - The `textsLog` data often contain duplicates (usually 3 or 4 identical rows). This seems to be more common for sent texts but can occur for received texts. 
-- It appears that `timestamp`s are often out of order -- this is expected behavior. The OS queues up commands and writes when optimally efficient for battery life. This will rarely (~ `3 / 1.4 million` in my own data) lead to one line being written after others.
+- It appears that `timestamp`s are often out of order -- this is expected behavior. The OS queues up commands and writes when optimally efficient for battery life. This will rarely (~ `3 / 1.4 million` in my own data) lead to lines being written out of order.
 - Sometimes, acclerometer data will appear duplicated -- that is, two lines with identical timestamps. Usually caused by accelerometer taking two measurements within the same millisecond. Relatively rare (~ `1300 / 1.4 million` in my data).
+- Users will sometimes receive a `Bluetooth Share has stopped` error message. This is a problem with Android OS 4.3 to 4.4.3 and is a result of too many Bluetooth LE signals being received by the OS at the same time. Nothing we can do about this and no fix is known.
+- All devices receive Bluetooth beacons correctly, but it appears that phones running Lollipop (Android OS 5) will not always transmit. This will bias the unique devices count (downwards).
 
 # Functions
 More information about each function can be found in the function's docstring (i.e., `help([function])` or `?[function]`). This is just a list of functions to give you an idea of what has already been done.
