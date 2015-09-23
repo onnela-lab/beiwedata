@@ -68,7 +68,7 @@ GPS files contain: `time`, `latitude`, `longitude`, `altitude`, and `accuracy`. 
 ## IDs
 ID files should only contain one row and in most cases should one have one instance. A bug exists where this file may be created again, but I have not found a way to replicate the bug reliably. This file will contain the users own `patient id`, `(hashed) MAC`, `(hashed) phone_number`, and `device_id`.
 K
-**NOTE:** I'm assuming device ID is bluetooth MAC address, but am not sure. I'm also assuming hashed MAC is actually the phone's WiFi MAC address.
+**NOTE:** I'm assuming device ID is a hashed IMEI number, but am not sure. I'm also assuming hashed MAC is actually the phone's BlueTooth MAC address.
 
 ## Beiwe logs
 Beiwe log files are app-generated messages and should be used only for diagnostic purposes. 
