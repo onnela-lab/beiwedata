@@ -246,11 +246,11 @@ def make_timestamp(yr, mo, dy, hr=0, mi=0, java=True):
     dy : day
     hr : hour [0, 23]
     mi : minutes [0, 59]
-    java : if True, returns Java time (in microseconds), else returns Unix time
+    java : if True, returns Java time (in milliseconds), else returns Unix time
 
     Notes
     -----
-    Remember, all datetimes  on the phones are recorded in UTC so adjust
+    Remember, all datetimes on the phones are recorded in UTC so adjust
     appropriately.
 
     """
