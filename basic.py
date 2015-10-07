@@ -285,7 +285,7 @@ def import_df(flist, tstamp='timestamp', setindex=True):
     for f in flist:
         frame = pd.read_csv(f)
         if "wifiLog" in f:
-            frame[tstamp] = int(f.split('_')[1].split('.')[0])
+            frame[tstamp] = int(f.split('_')[-1].split('.')[0])
         slices.append(frame)
 
     ## Concatenate them into one large dataframe (ignore_index must be True)
@@ -481,7 +481,7 @@ def describe_user(fpath):
     ## Create a list of all the files, then split to get the type of data, then
     ## turn it into a set to get unique values, then turn it into a sorted list
     ## so we can import it into a pandas.DataFrame.
-    ftypes = [f.split('_')[0] for f in os.listdir(fpath) if f.endswith('.csv')]
+    ftypes = [f.split('_')[-2] for f in os.listdir(fpath) if f.endswith('.csv')]
     ftypes = list(set(ftypes))
     ftypes.sort()
 
@@ -509,7 +509,7 @@ def describe_user(fpath):
     ## nonempty data file will have to suffice.
     ## first split will get the timestamp. Second split removes extension.
     ## Ternary operator checks for empty list and returns None if empty.
-    first = [flist_nonempty[f][0].split('_')[-1].split('.csv')[0] if
+    first = [flist_nonempty[f][-1].split('_')[-1].split('.csv')[0] if
              flist_nonempty[f] else None for f in ftypes]
     last = [flist_nonempty[f][-1].split('_')[-1].split('.csv')[0] if
             flist_nonempty[f] else None for f in ftypes]
