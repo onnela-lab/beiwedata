@@ -112,7 +112,7 @@ def list_data_files(fpath, stream, nonempty=True,
         filelist = [f for f in os.listdir(fpath) if f.endswith('.csv')]
     else:
         filelist = [f for f in os.listdir(fpath) if
-                    f.endswith('.csv') and f.startswith(stream)]
+                    f.endswith('.csv') and f.split('_')[-2].startswith(stream)]
 
     ## add folder if not in './'
     if fpath != './':
