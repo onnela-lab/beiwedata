@@ -4,5 +4,3 @@
 *.xml
 
 .idea*
-
-download_script/download_script_credentials.py
