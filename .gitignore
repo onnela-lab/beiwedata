@@ -4,3 +4,6 @@
 *.xml
 
 .idea*
+
+my_data_access_api_credentials.py
+
