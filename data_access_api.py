@@ -1,11 +1,7 @@
-# API_TIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
-# slightly more human notation: YYYY-MM-DDThh:mm:ss
-# (that is the letter T between date and time)
-# 1990-01-31T07:30:04 gets you jan 31 1990 at 7:30:04am
-
 import urllib, urllib2, StringIO, zipfile, json
 from datetime import datetime
 from os import path
+#Comment out the following import to disable the credentials file.
 from my_data_access_api_credentials import ACCESS_KEY, SECRET_KEY
 
 API_TIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
@@ -23,6 +19,37 @@ VOICE_RECORDING = "audio_recordings"
 WIFI = "wifi"
 
 def make_request(study_id, access_key=ACCESS_KEY, secret_key=SECRET_KEY, user_ids=None, data_streams=None, time_start=None, time_end=None):
+     """
+
+     Behavior
+     This function will download the data from the server, decompress it, and WRITE IT TO FILES IN YOUR CURRENT WORKING DIRECTORY.
+     If the data in the current working directory includes a "registry.dat" file, the server will use the contents of it to only download files that are new, potentially greatly speeding up your requests.
+
+     Study ID
+     study_id is required for any query. Currently the only way to view the ID of a given study on studies.beiwe.org website is to look at the url while viewing a study's main page.
+     study_id is a string, it will look like this: 55f9d1a597013e3f50ffb4c7
+
+     Credentials
+     If you are using the my_data_access_credentials.py file your credentials will automatically be pulled from it; you will not need to provide those as kwargs. Simply fill in the appropriate access and secret key values to the variables in that file.
+     You can find your credentials on the studies.beiwe.org website, click the Manage Credentials tab on the top of the page.
+     
+     User Ids
+     You may provide a list of user IDs as strings to this function, they should be identical to the user IDs displayed when viewing a study on studies.beiwe.org.
+     Default behavior: if you provide no users data will be returned for ALL users in that study.
+
+     Data Streams
+     To specify a certain data stream add it to a list and provide that list to the data streams folder.  The data streams can be imported from this module, they are ACCELEROMETER, BLUETOOTH, CALL_LOG, GPS, IDENTIFIERS, LOG_FILE, POWER_STATE, SURVEY_ANSWERS, SURVEY_TIMINGS, TEXTS_LOG, VOICE_RECORDING, and WIFI.
+     Default behavior: if you provide to data streams data will be returned for ALL available data streams.
+
+     Dates and Times
+     Time-string format: YYYY-MM-DDThh:mm:ss
+     (that is an upper case letter T separating the date and the time)
+     Example: 1990-01-31T07:30:04 gets you Jan 31 1990 at 7:30:04 AM
+     Behavior: the times provided are inclusive, that is you will receive data contained in files with an exactly matching time.
+     Default behavior: if you provide no start time parameter data will be returned starting from the beginning of time for that user; if you provide no end time parameter data will be returned up to the most current indexed data.
+     NOTE: granularity of requesting time is by hour, data will be updated on the server roughly once an hour.
+     NOTE: Use the string from this module's API_TIME_FORMAT variable if you are using the Python DateTime library to generate date strings, or investigate the commented out lines of code in this function.
+     """
 
      url = 'https://studies.beiwe.org/get-data/v1'
      values = {'access_key' : access_key,
@@ -32,7 +59,7 @@ def make_request(study_id, access_key=ACCESS_KEY, secret_key=SECRET_KEY, user_id
      if user_ids: values['user_ids'] = user_ids
      if data_streams: values['data_streams'] = data_streams
 
-     # Uncomment the below lines to enable (time zone unaware) datetime support
+     # Uncomment the below lines to enable (time zone unaware) datetime object support, add 'from datetime import datetime' to the imports.
      if time_start:
           # if isinstance(time_start, datetime):
                # time_start = time_start.strftime(API_TIME_FORMAT)
