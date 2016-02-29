@@ -5,4 +5,5 @@
 
 .idea*
 
-download_script/download_script_credentials.py
+my_data_access_api_credentials.py
+
