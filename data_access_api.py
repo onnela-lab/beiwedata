@@ -56,8 +56,8 @@ def make_request(study_id, access_key=ACCESS_KEY, secret_key=SECRET_KEY, user_id
                'secret_key' : secret_key,
                'study_id' : study_id }
 
-     if user_ids: values['user_ids'] = user_ids
-     if data_streams: values['data_streams'] = data_streams
+     if user_ids: values['user_ids'] = json.dumps(user_ids)
+     if data_streams: values['data_streams'] = json.dumps(data_streams)
 
      # Uncomment the below lines to enable (time zone unaware) datetime object support, add 'from datetime import datetime' to the imports.
      if time_start:
@@ -77,7 +77,8 @@ def make_request(study_id, access_key=ACCESS_KEY, secret_key=SECRET_KEY, user_id
      else: old_registry = {}
 
      print "sending request, this could take some time."
-
+     #print values
+     
      req = urllib2.Request(url, urllib.urlencode(values))
      response = urllib2.urlopen(req)
      return_data = response.read()
