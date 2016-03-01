@@ -33,7 +33,7 @@ def convert_mp4(fname, outname=None):
     If you have homebrew, try: `brew install ffmpeg`;
     else, see: https://trac.ffmpeg.org/wiki/CompilationGuide
 
-    Also, never tested this on a Windows machine.
+    Never tested this on a Windows machine.
 
     """
     command = 'ffmpeg -i ' + fname + ' -ab 160k -ac 2 -ar 44100 -vn '

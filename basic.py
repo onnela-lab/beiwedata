@@ -29,10 +29,12 @@ def _sms_sort(row, yval=1, spacer=.05):
     if row['sent vs received'] == 'received SMS':
         return yval-spacer
 
+
 def _call_end(row):
     start_t = datetime.datetime.utcfromtimestamp(int(row['timestamp'] / 1000))
     end_t = start_t + datetime.timedelta(0, row['duration in seconds'])
     return end_t
+
 
 def _call_sort(row, yval=1.5, spacer=.05):
     if row['call type'] == "Incoming Call":
@@ -46,141 +48,132 @@ def _call_sort(row, yval=1.5, spacer=.05):
         return None
 
 
-def row_count(fname):
+def row_count(fpath):
     """Returns number (as int) of observations in a file.
 
     Parameters
     ----------
-    fname : path to a log file
+    fname : path to a data file
 
     Notes
     -----
     Only counts data rows. Does *not* count the header as a row. Thus,
-    a return value of 0 indicates a file with only the header and no data.
+    a return value of 0 indicates a file with only the header and no data. New
+    data processing procedures should eliminate empty files.
 
     """
-    with open(fname) as f:
+    with open(fpath) as f:
         for i, _ in enumerate(f):
             pass
     return i
 
 
-def list_data_files(fpath, stream, nonempty=True,
-                    start_t=None, end_t=None):
-    """Returns a list of filenames for specified data stream and timeframe
+def list_data_files(upath, stream='all', start_t=None, end_t=None):
+    """Return a list of data files by user and data stream (no audio files)
 
     Parameters
     ----------
     stream : The data stream you want.
                 - 'all' produces all .csv files
                 - 'accel' for accelerometer data
+                - 'app' for app log data
                 - 'blue' for bluetooth data
                 - 'call' for call logs
                 - 'gps' for gps data
                 - 'id' for (hashed) patient identifiers
-                - 'log' for app log data
                 - 'power' for power state data
                 - 'surveyA' for survey answers
                 - 'surveyT' for survey timings
                 - 'text' for text logs
                 - 'wifi' for wifi logs
-    fpath : directory to be searched (default is current directory)
-    nonempty : If True, will remove empty files from the list
-    start_t : timestamp of starting time of **file creation** timeframe
-    end_t : timestamp for ending time of **file creation** timeframe
+    upath : directory of user_id
+    start_t : datetime object of starting time (remember, this is UTC)
+    end_t : datetime object of ending time (remember, this is UTC)
 
     Usage
     -----
-    call_csv_files = list_data_files(stream='calls', fpath='./user_directory')
-    gps_csv_files = list_data_files(stream='gps', fpath='./user_directory')
+    call_csv_files = list_data_files(upath='./user_directory', stream='calls')
+    gps_csv_files = list_data_files(upath='./user_directory', stream='gps')
 
     Notes
     -----
-    For sanity, I check to make sure it is a .csv file, but if this hinders
-    performance, it is probably not necessary. Due to this check, **voice
-    recordings will not work** and will have its own function. Also note
-    that start and end times are for file creation -- not observation time.
-
-    Also see make_timestamp().
+    For sanity, I check to make sure it is a .csv file and it's not empty, but
+    is not strictly necessary with the new processing code. Empty files should
+    be filtered server-side. 
+    
+    Note that **voice recordings will not work** and have their own function.
 
     """
 
-    ## First subset by data stream
-    if stream == 'all':
-        filelist = [f for f in os.listdir(fpath) if f.endswith('.csv')]
-    else:
-        filelist = [f for f in os.listdir(fpath) if
-                    f.endswith('.csv') and f.split('_')[-2].startswith(stream)]
+    ## Walk the user path and get all .csv files
+    flist = []
+    for path, subdirs, files in os.walk(upath):
+        for name in files:
+            if name.endswith('.csv'):
+                flist.append(os.path.join(path, name))
+    
+    ## Subset out stream if necessary
+    if stream != 'all':
+        flist = [f for f in flist if f.split('/')[-2].startswith(stream)]
+    
+    ## Filter out empty files
+    ## NOTE: This should **not** be necessary with new processing code
+    flist = [f for f in flist if row_count(f) > 0]
+    
+    ## Subset by time if end or start time specified
+    if (start_t is not None) or (end_t is not None):
+        times = [f.split('/')[-1].split('.')[-2] for f in flist]
+        times = [datetime.datetime.strptime(t, '%Y-%m-%d %H_%M_%S') 
+                    for t in times]
+        
+        if start_t is None:
+            start_t = min(times) - datetime.timedelta(hours=1)
+        if end_t is None:
+            end_t = max(times) + datetime.timedelta(hours=1)
+        
+        bools = np.array([t >= start_t and t <= end_t for t in times])
+        flist = list(np.array(flist)[bools])
+        
+    return flist
 
-    ## add folder if not in './'
-    if fpath != './':
-        if fpath.endswith('/'):
-            filelist = [fpath + f for f in filelist]
-        else:
-            filelist = [fpath + '/' + f for f in filelist]
 
-    ## Then subset by empties (if applicable)
-    if nonempty is True:
-        filelist = [f for f in filelist if row_count(f) > 0]
-
-    ## Finally, subset by time (if applicable)
-    if start_t is not None and end_t is not None:
-        newfilelist = []
-
-        for name in filelist:
-            try:
-                file_t = int(name.split('_')[-1].split('.')[0])
-                if (file_t > start_t) and (file_t < end_t):
-                    newfilelist.append(name)
-            except (IndexError, ValueError):
-                print "error on filename ", name
-        return newfilelist
-
-    else:
-        return filelist
-
-def list_audio_files(fpath, start_t=None, end_t=None,
-                     mp4only=False):
-    """Returns a list of audio files
+def list_audio_files(upath, mp4only=True, start_t=None, end_t=None, ):
+    """Returns a list of audio files for a specified user directory
 
     Parameters
     ----------
-    fpath : directory to be searched (default is current directory)
-    start_t : timestamp of starting time of file creation timeframe
-    end_t : timestamp for ending time of file creation timeframe
-    mp4only : returns only unconverted files (mp4s)
-
-    Notes
-    -----
-    Also see make_timestamp().
+    upath : directory of user to be searched
+    mp4only : if True, returns only unconverted files (.mp4 files)
+    start_t : datetime object of starting time (remember, this is UTC)
+    end_t : datetime object of ending time (remember, this is UTC)
 
     """
-    if mp4only is False:
-        filelist = [f for f in os.listdir(fpath) if
-                    f.endswith(('.mp4', '.wav'))]
-    else:
-        filelist = [f for f in os.listdir(fpath) if f.endswith('.mp4')]
-
-    if fpath != './':
-        if fpath.endswith('/'):
-            filelist = [fpath + f for f in filelist]
-        else:
-            filelist = [fpath + '/' + f for f in filelist]
-
-    if (start_t is not None) and (end_t is not None):
-        newfilelist = []
-
-        for name in filelist:
-            try:
-                file_t = int(name.split('_')[-1].split('.')[0])
-                if (file_t > start_t) and (file_t < end_t):
-                    newfilelist.append(name)
-            except (IndexError, ValueError):
-                print "error on filename ", name
-        return newfilelist
-
-    else:
-        return filelist
+    ## Walk the user path and get all audio files
+    flist = []
+    for path, subdirs, files in os.walk(upath):
+        for name in files:
+            if mp4only:
+                if name.endswith('.mp4'):
+                    flist.append(os.path.join(path, name))
+            else:
+                if name.endswith(('.mp4', '.wav')):
+                    flist.append(os.path.join(path, name))
+    
+    ## Subset by time if end or start time specified
+    if (start_t is not None) or (end_t is not None):
+        times = [f.split('/')[-1].split('.')[-2] for f in flist]
+        times = [datetime.datetime.strptime(t, '%Y-%m-%d %H_%M_%S') 
+                    for t in times]
+        
+        if start_t is None:
+            start_t = min(times) - datetime.timedelta(hours=1)
+        if end_t is None:
+            end_t = max(times) + datetime.timedelta(hours=1)
+        
+        bools = np.array([t >= start_t and t <= end_t for t in times])
+        flist = list(np.array(flist)[bools])
+        
+    return flist
 
 
 
@@ -834,3 +827,4 @@ def plot_calls_texts(calldf, textdf, start_ts, end_ts, xbuffer = 5):
     axes.set_xlim([x_start, x_end])
 
     return fig, axes
+
