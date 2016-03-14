@@ -99,3 +99,26 @@ def make_request(study_id, access_key=ACCESS_KEY, secret_key=SECRET_KEY, user_id
      print "Operations complete."
      #Uncomment the following line to have the function return a list of newly updated files.
      # return [name.filename for name in z.filelist if name.filename != "registry"]
+
+
+def get_users_request(study_id, access_key=ACCESS_KEY, secret_key=SECRET_KEY):
+     """ Provides a list of user ids enrolled in the given study. """
+     url = 'https://studies.beiwe.org/get-users/v1'
+     values = {'access_key' : access_key,
+               'secret_key' : secret_key,
+               'study_id' : study_id }
+
+     req = urllib2.Request(url, urllib.urlencode(values))
+     response = urllib2.urlopen(req)
+     return json.loads(response.read())
+
+def get_studies_request(access_key=ACCESS_KEY, secret_key=SECRET_KEY):
+     """ Provides a dictionary of the form {study_key:study_name} for studies accessible to the provided user credentials"""
+     url = 'https://studies.beiwe.org/get-studies/v1'
+     values = {'access_key' : access_key,
+               'secret_key' : secret_key}
+
+     req = urllib2.Request(url, urllib.urlencode(values))
+     response = urllib2.urlopen(req)
+     return json.loads(response.read())
+
