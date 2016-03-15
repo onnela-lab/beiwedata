@@ -82,13 +82,13 @@ def list_data_files(upath, stream='all', start_t=None, end_t=None):
                 - 'gps' for gps data
                 - 'id' for (hashed) patient identifiers
                 - 'power' for power state data
-                - 'surveyA' for survey answers
-                - 'surveyT' for survey timings
+                - 'survey_a' for survey answers
+                - 'survey_t' for survey timings
                 - 'text' for text logs
                 - 'wifi' for wifi logs
     upath : directory of user_id
-    start_t : datetime object of starting time (remember, this is UTC)
-    end_t : datetime object of ending time (remember, this is UTC)
+    start_t : datetime object of starting time (data is always in UTC)
+    end_t : datetime object of ending time (data is always in UTC)
 
     Usage
     -----
@@ -113,8 +113,10 @@ def list_data_files(upath, stream='all', start_t=None, end_t=None):
                 flist.append(os.path.join(path, name))
     
     ## Subset out stream if necessary
+    ## Note nested surveys require indexing at -3, the rest at -2.
     if stream != 'all':
-        flist = [f for f in flist if f.split('/')[-2].startswith(stream)]
+        flist = [f for f in flist if (f.split('/')[-2].startswith(stream)) or 
+                    (f.split('/')[-3].startswith(stream))]
     
     ## Filter out empty files
     ## NOTE: This should **not** be necessary with new processing code
@@ -126,6 +128,7 @@ def list_data_files(upath, stream='all', start_t=None, end_t=None):
         times = [datetime.datetime.strptime(t, '%Y-%m-%d %H_%M_%S') 
                     for t in times]
         
+        ## Note the one hour buffer
         if start_t is None:
             start_t = min(times) - datetime.timedelta(hours=1)
         if end_t is None:
@@ -174,7 +177,6 @@ def list_audio_files(upath, mp4only=True, start_t=None, end_t=None, ):
         flist = list(np.array(flist)[bools])
         
     return flist
-
 
 
 def return_file(fname):
@@ -284,7 +286,7 @@ def ts_to_local(timestamp):
     if len(str(timestamp)) == 13:
         timestamp /= 1000
     return datetime.datetime.fromtimestamp(
-        int(timestamp)).strftime('%m/%d/%Y %H:%M:%S')
+        int(timestamp)).strftime('%Y-%m-%d %H_%M_%S')
 
 
 def ts_to_utc(timestamp):

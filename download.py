@@ -24,11 +24,12 @@ WIFI = "wifi"
 
 ## Helper functions
 def mkdir_p(path):
-    """Same as `mkdir -p` -- make directory with intermediates if necessary
+    """Same as `mkdir -p` in linux -- makes directory with intermediates 
     
     Notes
     -----
     Should handle most race conditions. If directory exists, silently passes.
+    
     """
     try:
         os.makedirs(path)
@@ -64,7 +65,8 @@ class cd:
     
     with cd('../data/'):
         make_request(ENTER_INFO_HERE)    
-    ````
+    ```
+    
     """
     def __init__(self, newPath):
         self.newPath = os.path.expanduser(newPath)
@@ -79,7 +81,7 @@ class cd:
 
 def make_request(study_id, access_key, secret_key, user_ids=None, 
                  data_streams=None, time_start=None, time_end=None, 
-                 folder='.', return_new=False):
+                 folder='.', return_new=False, verbose=True):
     """Submit a download request to the studies.beiwe.org server
      
     Parameters
@@ -93,6 +95,7 @@ def make_request(study_id, access_key, secret_key, user_ids=None,
     time_end : YYYY-MM-DDThh:mm:ss (note capital T -- see: Details)
     folder : download to this folder (default is current working directory)
     return_new : if True, return a list of new/updated files
+    verbose : if True, provide feedback
     
     Notes
     -----
@@ -169,16 +172,20 @@ def make_request(study_id, access_key, secret_key, user_ids=None,
                 values["registry"] = json.dumps(old_registry)
         else: old_registry = {}
 
-        print "Sending request, this could take some time."
+        if verbose:
+            print "Sending request, this could take some time."
 
         req = urllib2.Request(url, urllib.urlencode(values))
         response = urllib2.urlopen(req)
         return_data = response.read()
-
-        print "Data received.  Unpacking and overwriting any updated files into", os.path.abspath('.')
-
+        
         z = zipfile.ZipFile(StringIO.StringIO(return_data))
-        z.extractall()
+        z.extractall()  
+        # could use z.extractall(path=...) but cd() makes registry mgmt easier
+        
+        if verbose:
+            print "Data received."
+            print "Unpacking files:", os.path.abspath('.')
 
         with open("registry") as f:
             new_registry = json.load(f)
@@ -187,12 +194,15 @@ def make_request(study_id, access_key, secret_key, user_ids=None,
         with open("master_registry", "w") as f:
             json.dump(old_registry, f)
         os.path.os.remove("registry")
+        
+        new_files = [name.filename for name in z.filelist 
+                        if name.filename != "registry"]
+        
+        if verbose:
+            print "Completed: " + str(len(new_files)) + " new files"
      
         if return_new:
-            return [name.filename for name in z.filelist if 
-                    name.filename != "registry"]
-    
-        print "Operations complete."
+            return new_files
 
 ## Wrapper functions start here
 def download_accel(study_id, access_key, secret_key, user_ids=None, 
