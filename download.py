@@ -204,6 +204,27 @@ def make_request(study_id, access_key, secret_key, user_ids=None,
         if return_new:
             return new_files
 
+def get_users_request(study_id, access_key=ACCESS_KEY, secret_key=SECRET_KEY):
+     """ Provides a list of user ids enrolled in the given study. """
+     url = 'https://studies.beiwe.org/get-users/v1'
+     values = {'access_key' : access_key,
+               'secret_key' : secret_key,
+               'study_id' : study_id }
+
+     req = urllib2.Request(url, urllib.urlencode(values))
+     response = urllib2.urlopen(req)
+     return json.loads(response.read())
+
+def get_studies_request(access_key=ACCESS_KEY, secret_key=SECRET_KEY):
+     """ Provides a dictionary of the form {study_key:study_name} for studies accessible to the provided user credentials"""
+     url = 'https://studies.beiwe.org/get-studies/v1'
+     values = {'access_key' : access_key,
+               'secret_key' : secret_key}
+
+     req = urllib2.Request(url, urllib.urlencode(values))
+     response = urllib2.urlopen(req)
+     return json.loads(response.read())
+
 ## Wrapper functions start here
 def download_accel(study_id, access_key, secret_key, user_ids=None, 
             time_start=None, time_end=None, folder='.'): 
