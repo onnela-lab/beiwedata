@@ -204,7 +204,7 @@ def make_request(study_id, access_key, secret_key, user_ids=None,
         if return_new:
             return new_files
 
-def get_users_request(study_id, access_key=ACCESS_KEY, secret_key=SECRET_KEY):
+def get_users_request(study_id, access_key, secret_key):
      """ Provides a list of user ids enrolled in the given study. """
      url = 'https://studies.beiwe.org/get-users/v1'
      values = {'access_key' : access_key,
@@ -215,7 +215,7 @@ def get_users_request(study_id, access_key=ACCESS_KEY, secret_key=SECRET_KEY):
      response = urllib2.urlopen(req)
      return json.loads(response.read())
 
-def get_studies_request(access_key=ACCESS_KEY, secret_key=SECRET_KEY):
+def get_studies_request(access_key, secret_key):
      """ Provides a dictionary of the form {study_key:study_name} for studies accessible to the provided user credentials"""
      url = 'https://studies.beiwe.org/get-studies/v1'
      values = {'access_key' : access_key,
