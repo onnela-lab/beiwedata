@@ -1,9 +1,8 @@
-
 *.pyc
 
 *.xml
 
 .idea*
 
-download_creds.py
+
 
