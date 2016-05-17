@@ -58,9 +58,10 @@ Accelerometer files contain 5 columns: `timestamp`, `accuracy`, `x`, `y`, and `z
 
 ## Bluetooth
 Bluetooth files contain: `timestamp`, `MAC`, and `RSSI`. Note that `MAC` is actually the *hashed* MAC address of other devices. `RSSI` is in dBm.
+Note: due to restrictions starting in Android version 6 only a few devices can now report their mac address, instead these should report either "N/A" for their Mac address.
 
 ## Phone calls
-Call logs contain: `hashed phone number`, `call type`, `date`, and `duration in seconds`. Note that `date` is the equivalent of `timestamp` in other files (i.e., it is not a human-readable datetime object). This issue has been noted and will be fixed in a future update of the app.
+Call logs contain: `hashed phone number`, `call type`, `date`, and `duration in seconds`. Note that `date` is the equivalent of `timestamp` in other files (i.e., it is not a human-readable datetime object).
 
 ## GPS
 GPS files contain: `time`, `latitude`, `longitude`, `altitude`, and `accuracy`. Note that `time` here is the equivalent of `timestamp` in other places. Again, programmers may change this in future versions to be more consistent. Accuracy is the accuracy in meters.
@@ -69,7 +70,7 @@ GPS files contain: `time`, `latitude`, `longitude`, `altitude`, and `accuracy`. 
 
 ## IDs
 ID files should only contain one row and in most cases will only have one instance; the file will get recreated if a user-id is re-registered, and it will contain different identifying information if the user is re-registered on a different device. This file will contain the users own `patient id`, `(hashed) MAC`, `(hashed) phone_number`, and `device_id`.
-K
+
 **NOTE:** The device ID is sourced from an operating system value called ANDROID\_ID. It is unique to the device, but will change if a user does a factory reset on their device and then reinstalls the Beiwe app. The hashed MAC is of the phone's _BlueTooth_ MAC address.
 
 ## Beiwe logs
@@ -88,17 +89,18 @@ Variable depending on the survey.
 Text logs contain: `timestamp`, `hashed phone number`, `sent vs received`, `message length`, and `time sent`. In general, `time sent` should be ignored. It is theoretically the time the message was sent (from somebody else) while `timestamp` is the time that message would have been received by the user. In practice, these should be identical or very similar.
 
 ## Voice memos
-Self-recorded voice memos. Will vary by study.
+Self-recorded voice memos.  Will vary by study.  Voice recordings are in one of two formats: mp4 and wav files.  Mp4 files use AAC compression, wav files contain PCM data.  All audio files are a single channel.
 
 ## WiFi
 Contains `hashed MAC`, `frequency`, and `RSSI`. Frequency will always be 2.4GHz or 5GHz so I'm not sure how useful that is. `RSSI` is in dBm.
 
 # Known Data Issues
 - The `textsLog` data often contain duplicates (usually 3 or 4 identical rows). This seems to be more common for sent texts but can occur for received texts. 
-- It appears that `timestamp`s are very occasionally out of order -- this is expected behavior. The OS queues up writes so that they don't occur simultaneously, which would corrupt data. This will rarely (~ `3 / 1.4 million`in my own data) lead to lines being written out of order.
 - Sometimes, two accelerometer data points will have identical timestamps. This is caused by the accelerometer reporting and the app processing two measurements within the same millisecond of time, which is below the resolution of the app to record. Relatively rare (~ `1300 / 1.4 million` in my data).
 - Users will sometimes receive a `Bluetooth Share has stopped` error message, at which point Bluetooth recording will probably fail. This is a problem with Android OS 4.3 to 4.4.3, and is caused by the device receiving too many Bluetooth LE signals too quickly. This is not a problem with the Beiwe app, it is a bug in Android's networking software stack, and there is nothing we can do about it.
 - All devices receive Bluetooth beacons correctly, but devices running versions of Android before Lollipop (Android OS 5) will not always transmit Bluetooth beacons. This will bias the unique devices count (downwards).
+- Android version 6 significantly restricts access to the Bluetooth Mac address, though some devices will still be able to report.
+- Android version 6 implements a new power-saving behavior, but it is unknown which devices implement this feature _as documented_.  Documented behavior: if the device is stationary for some "long" period of time _and_ unplugged it will enter a low power mode in which it delays timer triggers.  The Beiwe Android App tries to handle these events gracefully, delaying data recording sessions until the device is picked up or otherwise interacted with. The inactivity time period is unknown; the determination of whether the device has been stationary is made by the Android OS monitoring data from the accelerometer, but there are indications that not all devices actually do this. Devices in Doze mode will periodically "wake up" to execute delayed timer events, but successive "wake up" events will occur less and less frequently, resetting when the device is picked up or otherwise interacted with.
 
 # Functions
 More information about each function can be found in the function's docstring (i.e., `help([function])` or `?[function]`). This is just a list of functions to give you an idea of what has already been done.
