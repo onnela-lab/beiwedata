@@ -1,9 +1,7 @@
-
 *.pyc
 
 *.xml
 
 .idea*
 
-my_data_access_api_credentials.py
-
+download_creds.py
