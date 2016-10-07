@@ -1,7 +1,8 @@
 *.pyc
-
 *.xml
-
 .idea*
-
+*.DS_Store
+.project
+.pydevproject
+.settings/
 download_creds.py
