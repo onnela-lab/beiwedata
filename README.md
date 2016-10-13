@@ -79,6 +79,23 @@ Beiwe log files are app-generated messages and should be used only for diagnosti
 ## Power State
 Power logs have two columns: `time` and `event`. Note that `time` here is the equivalent of `timestamp` elsewhere. Power state events are things like `screen on`, `screen off`, `power connected` and `power disconnected`.
 
+The following data points are introduced in Beiwe version 10.
+Note: the strings are intentionally over-explicit because Android only provides a notification that state has changed, and the app then has to check the current state. These operation non-atomic, and so the check has a tiny potential to be out of date.
+
+1) Doze:
+Doze is a new power state (technically a sleep state) added in Android 6. You can view some [useful documentation here](https://developer.android.com/training/monitoring-device-state/doze-standby.html#understand_doze).
+Summary: the Doze state is entered only if a device is unplugged, the screen is off, and the accelerometer indicates no or minimal device motion. It leaves this state _periodically_ to run scheduled tasks (a "maintenance window"), but does so with increasing-in-length sleep periods. The device also wakes up if any of the previously mentioned requirements are interrupted, or if the operating system identifies a "significant location change." _All scheduled data recording sessions and survey notifications are delayed until the device wakes up or enters a maintenance window.
+
+`Device Idle (Doze) state change signal received; device in idle state.`
+`Device Idle (Doze) state change signal received; device not in idle state.`
+
+2) "Power Save State"
+This was introduced in Android 5, the extent of documentation is "When in this mode, applications should reduce their functionality in order to conserve battery as much as possible." Apparently actually doing something, like ... reducing GPS frequency?, is up to the manufacturer, but may become one of those things that Android enforces globally in the future. It is not well defined when precisely this mode is entered, it is not well defined what this mode actually does, and currently (Android 6) we do not believe it has a determinable effect on Beiwe Android data collection.
+
+`Power Save Mode state change signal received; device in power save state.`
+`Power Save Mode change signal received; device not in power save state.`
+
+
 ## Survey Answers
 Variable depending on the survey. (note that this file also contains the text of any questions)
 
